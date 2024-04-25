@@ -1,14 +1,19 @@
 package com.microservicio.formateador.controller;
 
-import com.microservicio.formateador.model.FormateadorRequest;
-import com.microservicio.formateador.service.FormateadorService;
+import com.microservicio.formateador.exception.GlobalExceptionHandler;
+import com.microservicio.formateador.model.ApiResponse;
+import com.microservicio.formateador.model.Country;
+import com.microservicio.formateador.model.CountryAmountFormatResult;
+import com.microservicio.formateador.service.Formatter;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/formateador")
@@ -16,20 +21,36 @@ import org.springframework.web.bind.annotation.*;
 public class FormateadorController {
 
     @Autowired
-    private FormateadorService formateadorService;
+    private Formatter formateadorService;
 
-    @GetMapping("/{country}")
-    @ApiOperation(value = "Format amount for given country", response = String.class)
-    public String formatAmount(@PathVariable String country, @RequestParam BigDecimal amount) {
-        FormateadorRequest request = new FormateadorRequest();
-        request.setCountry(country);
-        request.setAmount(amount);
-        return formateadorService.formatAmount(request);
-    }
+    @Autowired
+    private GlobalExceptionHandler globalExceptionHandler;
 
     @GetMapping("/countries")
-    @ApiOperation(value = "Get available countries", response = String[].class)
-    public String[] getAvailableCountries() {
-        return formateadorService.getAvailableCountries();
+    @ApiOperation(value = "Get available countries", response = ApiResponse.class)
+    public ResponseEntity<ApiResponse<List<Country>>> getAvailableCountries() {
+        try {
+            List<Country> countries = formateadorService.getAvailableCountries();
+            ApiResponse<List<Country>> response = new ApiResponse<>(HttpStatus.OK.value(), "Success", countries);
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            return globalExceptionHandler.handleException(e);
+        }
+    }
+
+    @GetMapping("/{countryCode}")
+    @ApiOperation(value = "Format amount for given country", response = ApiResponse.class)
+    public ResponseEntity<ApiResponse<CountryAmountFormatResult>> formatAmount(@PathVariable String countryCode, @RequestParam BigDecimal amount) {
+        try {
+            CountryAmountFormatResult result = formateadorService.formatAmount(countryCode, amount);
+            ApiResponse<CountryAmountFormatResult> response = new ApiResponse<>(HttpStatus.OK.value(), "Success", result);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+             ApiResponse<CountryAmountFormatResult> response = new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Bad Request", null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        } catch (Exception e) {
+            ApiResponse<CountryAmountFormatResult> response = new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 }

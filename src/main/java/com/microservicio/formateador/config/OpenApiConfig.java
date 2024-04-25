@@ -11,9 +11,6 @@ import springfox.documentation.oas.annotations.EnableOpenApi;
 import springfox.documentation.service.ApiInfo;
 import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger.web.DocExpansion;
-import springfox.documentation.swagger.web.UiConfiguration;
-import springfox.documentation.swagger.web.UiConfigurationBuilder;
 
 @Configuration
 @EnableOpenApi
@@ -27,13 +24,6 @@ public class OpenApiConfig implements WebMvcConfigurer {
                 .paths(PathSelectors.any())
                 .build()
                 .apiInfo(apiInfo());
-    }
-
-    @Bean
-    public UiConfiguration uiConfig() {
-        return UiConfigurationBuilder.builder()
-                .docExpansion(DocExpansion.NONE)
-                .build();
     }
 
     private ApiInfo apiInfo() {

@@ -1,69 +1,91 @@
 package com.microservicio.formateador.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.microservicio.formateador.model.FormateadorRequest;
-import com.microservicio.formateador.service.FormateadorService;
+import com.microservicio.formateador.exception.GlobalExceptionHandler;
+import com.microservicio.formateador.model.ApiResponse;
+import com.microservicio.formateador.model.Country;
+import com.microservicio.formateador.model.CountryAmountFormatResult;
+import com.microservicio.formateador.service.Formatter;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
-
-@SpringBootTest
-@AutoConfigureMockMvc
+@ExtendWith(MockitoExtension.class)
 public class FormateadorControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Mock
+    private Formatter formatter;
 
     @Mock
-    private FormateadorService formateadorService;
+    private GlobalExceptionHandler globalExceptionHandler;
 
     @InjectMocks
     private FormateadorController formateadorController;
 
-
     @Test
-    public void testFormatAmount() throws Exception {
-     
-        BigDecimal amount = new BigDecimal("12345.123");
-        String country = "España";
+    public void testGetAvailableCountries_Success() {
+        // Mock data
+        List<Country> countries = new ArrayList<>();
+        countries.add(new Country("US", "United States"));
+        when(formatter.getAvailableCountries()).thenReturn(countries);
 
-        String expectedResponse = "ES: 12.345,13 €";
-        when(formateadorService.formatAmount(any(FormateadorRequest.class))).thenReturn(expectedResponse);
+        // Call controller method
+        ResponseEntity<ApiResponse<List<Country>>> response = formateadorController.getAvailableCountries();
 
-      
-        mockMvc.perform(get("/formateador/" + country)
-                .param("amount", amount.toString()) 
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(content().string(expectedResponse));
-    }
-
-    @Test
-    public void testGetCountries() throws Exception {
-        mockMvc.perform(get("/formateador/countries"))
-                .andExpect(status().isOk());
-    }
-
-    // Método auxiliar para convertir objetos a JSON
-    private static String asJsonString(final Object obj) {
-        try {
-            return new ObjectMapper().writeValueAsString(obj);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        // Verify response
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        if (response.getBody() != null) {
+            assertTrue(response.getBody().getData() != null);
+            assertEquals(countries, response.getBody().getData());
+        } else {
+            assertTrue(false, "Response body is null");
         }
     }
+
+    @Test
+    public void testGetAvailableCountries_Exception() {
+        // Mock exception
+        Exception exception = new RuntimeException("Error occurred");
+        when(formatter.getAvailableCountries()).thenThrow(exception);
+        when(globalExceptionHandler.handleException(exception)).thenReturn(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+
+        // Call controller method
+        ResponseEntity<ApiResponse<List<Country>>> response = formateadorController.getAvailableCountries();
+
+        // Verify response
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    }
+
+    @Test
+    public void testFormatAmount_Success() {
+        // Mock data
+        BigDecimal amount = BigDecimal.valueOf(100);
+        CountryAmountFormatResult expectedResult = new CountryAmountFormatResult("US", "$100.00", "$");
+        when(formatter.formatAmount("US", amount)).thenReturn(expectedResult);
+
+        // Call controller method
+        ResponseEntity<ApiResponse<CountryAmountFormatResult>> response = formateadorController.formatAmount("US", amount);
+
+        // Verify response
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        if (response.getBody() != null) {
+            assertTrue(response.getBody().getData() != null);
+            assertEquals(expectedResult, response.getBody().getData());
+        } else {
+            assertTrue(false, "Response body is null");
+        }
+    }
+
+
 }

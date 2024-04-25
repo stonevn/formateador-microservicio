@@ -98,6 +98,22 @@
             <version>${spring-framework.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <!-- Mockito-Core-->
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>3.9.0</version> 
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Mockito-junit-->
+       <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>5.11.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

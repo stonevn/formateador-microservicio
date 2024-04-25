@@ -4,8 +4,14 @@ import java.math.BigDecimal;
 
 public class FormateadorRequest {
     private BigDecimal amount;
-    private String country;
+    private String countryCode;
 
+    public FormateadorRequest(BigDecimal amount, String countryCode) {
+        this.amount = amount;
+        this.countryCode = countryCode;
+    }
+ 
+    // Getters y setters
     public BigDecimal getAmount() {
         return amount;
     }
@@ -14,18 +20,11 @@ public class FormateadorRequest {
         this.amount = amount;
     }
 
-    public String getCountry() {
-        return country;
+    public String getCountryCode() {
+        return countryCode;
     }
 
-    public void setCountry(String country) {
-        this.country = country;
+    public void setCountryCode(String countryCode) {
+        this.countryCode = countryCode;
     }
-
-    @Override
-    public String toString() {
-        return "FormateadorRequest [amount=" + amount + ", country=" + country + "]";
-    }
-
-    
 }
